@@ -897,14 +897,36 @@
   });
 
   // Submit
-  function handleSubmit() {
+  async function handleSubmit() {
     const val = document.getElementById('emailInput').value;
     if (!val || !val.includes('@')) {
       document.getElementById('formGroup').style.borderColor = 'rgba(255,80,80,0.5)';
       return;
     }
-    document.getElementById('formGroup').style.display = 'none';
-    document.getElementById('successMsg').style.display = 'block';
+
+    const btn = document.querySelector('.btn-join');
+    btn.textContent = 'PROCESSING...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/.netlify/functions/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: val }),
+      });
+
+      if (res.ok) {
+        document.getElementById('formGroup').style.display = 'none';
+        document.getElementById('successMsg').style.display = 'block';
+      } else {
+        btn.textContent = 'TRY AGAIN //';
+        btn.disabled = false;
+        document.getElementById('formGroup').style.borderColor = 'rgba(255,80,80,0.5)';
+      }
+    } catch {
+      btn.textContent = 'TRY AGAIN //';
+      btn.disabled = false;
+    }
   }
 
   document.getElementById('emailInput').addEventListener('keypress', e => {
