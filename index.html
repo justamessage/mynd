@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MYND — AI Identity Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #030305;
+    --surface: #0a0a0f;
+    --surface-2: #111118;
+    --acid: #00FF87;
+    --acid-dim: rgba(0,255,135,0.15);
+    --acid-border: rgba(0,255,135,0.2);
+    --white: #E8E8F0;
+    --white-dim: #5a5a6e;
+    --white-mid: #9898aa;
+    --border: rgba(255,255,255,0.06);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Cursor */
+  .cursor {
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    background: var(--acid);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s;
+    box-shadow: 0 0 12px var(--acid);
+  }
+
+  .cursor-ring {
+    position: fixed;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(0,255,135,0.3);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,135,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,135,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Scroll indicator */
+  .scroll-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 0%;
+    background: var(--acid);
+    z-index: 9000;
+    box-shadow: 0 0 8px var(--acid);
+    transition: width 0.05s linear;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 500;
+    padding: 1.5rem 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(3,3,5,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: 0.15em;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--acid); }
+
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--acid);
+    letter-spacing: 0.05em;
+  }
+
+  .status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--acid);
+    box-shadow: 0 0 8px var(--acid);
+    animation: blink 1.8s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .nav-right {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--white-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8rem 4rem 4rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--acid);
+    letter-spacing: 0.15em;
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 0.2s forwards;
+  }
+
+  .hero-label::before { content: '> '; }
+
+  .hero-headline {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3.5rem, 8.5vw, 9rem);
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    max-width: 1100px;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 0.4s forwards;
+  }
+
+  .hero-headline .line-accent {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(0,255,135,0.5);
+  }
+
+  .hero-headline .line-solid { color: var(--white); }
+
+  .hero-sub {
+    margin-top: 3.5rem;
+    max-width: 520px;
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--white-mid);
+    font-weight: 300;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 0.7s forwards;
+  }
+
+  .hero-actions {
+    margin-top: 3.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 1s forwards;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    background: var(--acid);
+    color: var(--void);
+    border: none;
+    padding: 0.9rem 2.2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: none;
+    text-decoration: none;
+    transition: box-shadow 0.3s, transform 0.2s;
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 30px rgba(0,255,135,0.4);
+    transform: translateY(-2px);
+  }
+
+  .hero-secondary {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--white-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* Stats row */
+  .hero-stats {
+    margin-top: 6rem;
+    display: flex;
+    gap: 4rem;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 1.2s forwards;
+    border-top: 1px solid var(--border);
+    padding-top: 2.5rem;
+  }
+
+  .stat-item { }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    color: var(--acid);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--white-dim);
+    letter-spacing: 0.1em;
+    margin-top: 0.3rem;
+  }
+
+  /* MANIFESTO */
+  .manifesto {
+    padding: 10rem 4rem;
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--acid);
+    letter-spacing: 0.2em;
+    margin-bottom: 5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .section-tag::after {
+    content: '';
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: var(--acid-border);
+  }
+
+  .manifesto-stack {
+    max-width: 900px;
+  }
+
+  .mline {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.4rem, 3vw, 2.6rem);
+    line-height: 1.2;
+    margin-bottom: 0.4rem;
+    color: var(--white-dim);
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.7s ease;
+  }
+
+  .mline.visible { opacity: 1; transform: translateX(0); }
+
+  .mline.big {
+    font-size: clamp(2rem, 4.5vw, 4rem);
+    color: var(--white);
+    margin: 1.5rem 0;
+  }
+
+  .mline.accent { color: var(--acid); }
+
+  .mline.dim {
+    font-weight: 400;
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    color: var(--white-dim);
+  }
+
+  .msep {
+    width: 40px;
+    height: 2px;
+    background: var(--acid);
+    margin: 3rem 0;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: all 0.6s ease;
+    box-shadow: 0 0 10px var(--acid);
+  }
+
+  .msep.visible { opacity: 1; transform: scaleX(1); }
+
+  /* PROTOCOL */
+  .protocol {
+    padding: 8rem 4rem;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 2;
+  }
+
+  .protocol-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 8rem;
+    align-items: start;
+  }
+
+  .protocol-left h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  .protocol-left h2 span { color: var(--acid); }
+
+  .protocol-left p {
+    font-size: 0.95rem;
+    line-height: 1.9;
+    color: var(--white-mid);
+    font-weight: 300;
+  }
+
+  .protocol-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .proto-item {
+    border: 1px solid var(--border);
+    padding: 2rem;
+    position: relative;
+    transition: border-color 0.3s, background 0.3s;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s, background 0.3s;
+    margin-bottom: -1px;
+  }
+
+  .proto-item.visible { opacity: 1; transform: translateY(0); }
+
+  .proto-item:hover {
+    border-color: var(--acid-border);
+    background: var(--acid-dim);
+    z-index: 2;
+  }
+
+  .proto-index {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--acid);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.75rem;
+  }
+
+  .proto-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .proto-desc {
+    font-size: 0.88rem;
+    color: var(--white-mid);
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  /* VISION */
+  .vision {
+    padding: 10rem 4rem;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 2;
+  }
+
+  .vision-terminal {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  .terminal-bar {
+    padding: 0.8rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .t-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--white-dim);
+    opacity: 0.3;
+  }
+
+  .terminal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--white-dim);
+    letter-spacing: 0.1em;
+    margin-left: auto;
+  }
+
+  .terminal-body {
+    padding: 2.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 2;
+    color: var(--white-mid);
+  }
+
+  .t-line { display: block; }
+  .t-line.cmd { color: var(--acid); }
+  .t-line.out { color: var(--white-mid); padding-left: 1rem; }
+  .t-line.highlight { color: var(--white); font-weight: 700; padding-left: 1rem; }
+  .t-line.gap { display: block; height: 0.8rem; }
+
+  .t-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--acid);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+
+  /* WAITLIST */
+  .waitlist {
+    padding: 10rem 4rem;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 2;
+  }
+
+  .waitlist-inner {
+    max-width: 640px;
+  }
+
+  .waitlist h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+  }
+
+  .waitlist h2 span { color: var(--acid); }
+
+  .waitlist p {
+    font-size: 0.95rem;
+    color: var(--white-mid);
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--acid-border);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .input-group:focus-within {
+    border-color: var(--acid);
+    box-shadow: 0 0 20px rgba(0,255,135,0.1);
+  }
+
+  .form-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    padding: 1rem 1.3rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    outline: none;
+    letter-spacing: 0.05em;
+  }
+
+  .form-input::placeholder {
+    color: var(--white-dim);
+  }
+
+  .btn-join {
+    background: var(--acid);
+    color: var(--void);
+    border: none;
+    padding: 1rem 1.8rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: none;
+    white-space: nowrap;
+    transition: box-shadow 0.3s;
+  }
+
+  .btn-join:hover {
+    box-shadow: 0 0 20px rgba(0,255,135,0.5);
+  }
+
+  .waitlist-note {
+    margin-top: 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--white-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .waitlist-note::before { content: '// '; }
+
+  .success-state {
+    display: none;
+    border: 1px solid var(--acid-border);
+    padding: 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--acid);
+    letter-spacing: 0.05em;
+    background: var(--acid-dim);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 3rem 4rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .footer-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    color: var(--white-dim);
+  }
+
+  .footer-logo span { color: var(--acid); }
+
+  .footer-meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--white-dim);
+    letter-spacing: 0.1em;
+    text-align: right;
+    line-height: 2;
+  }
+
+  .footer-meta a {
+    color: var(--white-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-meta a:hover { color: var(--acid); }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 1.2rem 1.5rem; }
+    .hero, .manifesto, .protocol, .vision, .waitlist { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .protocol-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .hero-stats { flex-wrap: wrap; gap: 2rem; }
+    footer { padding: 2rem 1.5rem; flex-direction: column; gap: 1.5rem; }
+    .footer-meta { text-align: center; }
+    body { cursor: auto; }
+    .cursor, .cursor-ring { display: none; }
+    .input-group { flex-direction: column; }
+    .btn-join { width: 100%; text-align: center; padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="ring"></div>
+<div class="scroll-bar" id="scrollBar"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">MYN<span>D</span></a>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    EARLY ACCESS OPEN
+  </div>
+  <div class="nav-right">v0.1 — AI IDENTITY PROTOCOL · 2026</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-label">AI Identity Ownership — 2026</p>
+
+  <h1 class="hero-headline">
+    <span class="line-solid">YOUR MIND.</span><br>
+    <span class="line-solid">YOUR CONTEXT.</span><br>
+    <span class="line-accent">YOUR MYND.</span>
+  </h1>
+
+  <p class="hero-sub">
+    You've built months of context inside AI systems that don't belong to you. 
+    MYND is the protocol that changes ownership. 
+    Portable. Encrypted. Sovereign.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#waitlist" class="btn-primary">Request Early Access</a>
+    <span class="hero-secondary">// limited slots available</span>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">0%</div>
+      <div class="stat-label">OF YOUR AI DATA YOU OWN TODAY</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">YOU WILL OWN WITH MYND</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">∞</div>
+      <div class="stat-label">PROVIDERS. ONE IDENTITY.</div>
+    </div>
+  </div>
+</section>
+
+<!-- MANIFESTO -->
+<section class="manifesto">
+  <div class="section-tag">01 — MANIFESTO</div>
+
+  <div class="manifesto-stack">
+    <p class="mline dim">You own your home.</p>
+    <p class="mline dim">You own your bank account.</p>
+    <p class="mline dim">You own your email address.</p>
+
+    <div class="msep"></div>
+
+    <p class="mline big">But your AI identity?</p>
+    <p class="mline dim">The context you've built. Your thinking patterns.</p>
+    <p class="mline dim">Your system logic. Your preferences. All of it.</p>
+
+    <div class="msep"></div>
+
+    <p class="mline big accent">That belongs to them.</p>
+
+    <div class="msep"></div>
+
+    <p class="mline dim">Switch models — start over.</p>
+    <p class="mline dim">Provider goes down — you lose ground.</p>
+    <p class="mline dim">You grow — your context stays behind.</p>
+
+    <div class="msep"></div>
+
+    <p class="mline big">MYND changes the protocol.</p>
+    <p class="mline">Your identity. Structured. Encrypted. <span style="color:var(--acid)">Yours.</span></p>
+  </div>
+</section>
+
+<!-- PROTOCOL -->
+<section class="protocol">
+  <div class="section-tag">02 — THE PROTOCOL</div>
+
+  <div class="protocol-grid">
+    <div class="protocol-left">
+      <h2>Not a tool.<br>A <span>layer</span><br>of the internet.</h2>
+      <p style="margin-top:2rem;">
+        MYND operates below the application layer — as infrastructure. 
+        Think of it as your passport for AI: you connect providers to it, 
+        not the other way around.
+        <br><br>
+        When regulation forces portability — and it will — MYND is what the world ports into.
+      </p>
+    </div>
+
+    <div class="protocol-right">
+      <div class="proto-item">
+        <div class="proto-index">PROTOCOL_01 // IDENTITY</div>
+        <div class="proto-title">The MYND Profile</div>
+        <div class="proto-desc">A structured, encrypted container. Your tone, thinking style, system prompts, agent logic — all of it. Provider-agnostic. Always yours.</div>
+      </div>
+      <div class="proto-item">
+        <div class="proto-index">PROTOCOL_02 // PORTABILITY</div>
+        <div class="proto-title">Cross-Provider Sync</div>
+        <div class="proto-desc">Connect Claude, GPT, Gemini, and whatever model comes next. Your context travels with you — not locked in their infrastructure.</div>
+      </div>
+      <div class="proto-item">
+        <div class="proto-index">PROTOCOL_03 // SOVEREIGNTY</div>
+        <div class="proto-title">Full Data Ownership</div>
+        <div class="proto-desc">Encrypted at rest. Versioned. Exportable at any time in open formats. Your AI identity is an asset — assets belong to their owner.</div>
+      </div>
+      <div class="proto-item">
+        <div class="proto-index">PROTOCOL_04 // COMPOUNDING</div>
+        <div class="proto-title">Value Accumulation</div>
+        <div class="proto-desc">Your MYND profile deepens over time. The longer you build it, the more valuable your identity becomes. And it stays with you — always.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISION TERMINAL -->
+<section class="vision">
+  <div class="section-tag" style="margin-bottom:3rem;">03 — THE LARGER PICTURE</div>
+
+  <div class="vision-terminal">
+    <div class="terminal-bar">
+      <div class="t-dot"></div>
+      <div class="t-dot"></div>
+      <div class="t-dot"></div>
+      <div class="terminal-title">mynd_vision.sh</div>
+    </div>
+    <div class="terminal-body">
+      <span class="t-line cmd">$ mynd --vision --timeline</span>
+      <span class="t-line gap"></span>
+      <span class="t-line out">Internet (1993)     → gave us communication</span>
+      <span class="t-line out">Blockchain (2009)   → gave us ownership of value</span>
+      <span class="t-line highlight">MYND (2025)         → gives us ownership of intelligence</span>
+      <span class="t-line gap"></span>
+      <span class="t-line cmd">$ mynd --what-happens-next</span>
+      <span class="t-line gap"></span>
+      <span class="t-line out">EU AI Act + DSA     → regulation forces data portability</span>
+      <span class="t-line out">Standards emerge    → open formats become mandatory</span>
+      <span class="t-line out">Providers comply    → export APIs go live</span>
+      <span class="t-line highlight">MYND               → already the destination</span>
+      <span class="t-line gap"></span>
+      <span class="t-line cmd">$ mynd --position</span>
+      <span class="t-line gap"></span>
+      <span class="t-line out">Not fighting providers. Working with them.</span>
+      <span class="t-line out">We are the layer beneath. Neutral. Sovereign.</span>
+      <span class="t-line highlight">Like Visa between banks. Like SWIFT between nations.</span>
+      <span class="t-line gap"></span>
+      <span class="t-line cmd">$ _<span class="t-cursor"></span></span>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="waitlist" id="waitlist">
+  <div class="waitlist-inner">
+    <h2>Be first.<br>Own your <span>intelligence</span>.</h2>
+    <p>
+      Early access is for founders, builders, and thinkers who understand 
+      the shift before it happens. Limited spots. 
+      No noise — only signal.
+    </p>
+
+    <div class="input-group" id="formGroup">
+      <input type="email" class="form-input" id="emailInput" placeholder="your@email.com" />
+      <button class="btn-join" onclick="handleSubmit()">SECURE ACCESS //</button>
+    </div>
+    <div class="success-state" id="successMsg">
+      > CONFIRMED. YOUR MYND SLOT IS RESERVED.<br>
+      > WE'LL BE IN TOUCH. STAY SOVEREIGN.
+    </div>
+    <p class="waitlist-note">no spam. no noise. ownership is the signal.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">MYN<span>D</span></div>
+  <div class="footer-meta">
+    <div>PART OF <a href="#">HIGHERPLAN</a> — HP TECH</div>
+    <div style="margin-top:0.3rem;">AI IDENTITY PROTOCOL · EST. 2026</div>
+    <div style="margin-top:0.3rem;">© 2026 MYND · <a href="#">PRIVACY</a> · <a href="#">IMPRINT</a></div>
+  </div>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  (function animate() {
+    rx += (mx - rx) * 0.1;
+    ry += (my - ry) * 0.1;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animate);
+  })();
+
+  document.querySelectorAll('a, button, input').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '12px';
+      cursor.style.height = '12px';
+      ring.style.width = '50px';
+      ring.style.height = '50px';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '5px';
+      cursor.style.height = '5px';
+      ring.style.width = '32px';
+      ring.style.height = '32px';
+    });
+  });
+
+  // Scroll bar
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    document.getElementById('scrollBar').style.width = pct + '%';
+  });
+
+  // Scroll reveal
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), e.target.dataset.d || 0);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.mline, .msep, .proto-item').forEach((el, i) => {
+    el.dataset.d = i * 70;
+    obs.observe(el);
+  });
+
+  // Submit
+  function handleSubmit() {
+    const val = document.getElementById('emailInput').value;
+    if (!val || !val.includes('@')) {
+      document.getElementById('formGroup').style.borderColor = 'rgba(255,80,80,0.5)';
+      return;
+    }
+    document.getElementById('formGroup').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+  }
+
+  document.getElementById('emailInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') handleSubmit();
+  });
+</script>
+</body>
+</html>

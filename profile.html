@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MYND — Initialize Your Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #030305;
+    --surface: #0a0a0f;
+    --surface-2: #111118;
+    --surface-3: #18181f;
+    --acid: #00FF87;
+    --acid-dim: rgba(0,255,135,0.08);
+    --acid-border: rgba(0,255,135,0.18);
+    --white: #E8E8F0;
+    --white-mid: #9898aa;
+    --white-dim: #4a4a5e;
+    --border: rgba(255,255,255,0.06);
+    --error: rgba(255,80,80,0.7);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,135,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,135,0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 1.2rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(3,3,5,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--acid); }
+
+  .nav-center {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--white-dim);
+    letter-spacing: 0.15em;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .nav-step-indicator {
+    display: flex;
+    gap: 4px;
+  }
+
+  .step-pip {
+    width: 20px;
+    height: 2px;
+    background: var(--white-dim);
+    transition: background 0.4s, box-shadow 0.4s;
+  }
+
+  .step-pip.active {
+    background: var(--acid);
+    box-shadow: 0 0 8px var(--acid);
+  }
+
+  .step-pip.done {
+    background: rgba(0,255,135,0.4);
+  }
+
+  .nav-right {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--white-dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* MAIN */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 7rem 2rem 4rem;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+  }
+
+  /* STEP WRAPPER */
+  .step {
+    display: none;
+    width: 100%;
+    max-width: 680px;
+    animation: stepIn 0.5s ease forwards;
+  }
+
+  .step.active { display: block; }
+
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--acid);
+    letter-spacing: 0.2em;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .step-tag::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--acid);
+    box-shadow: 0 0 6px var(--acid);
+  }
+
+  .step-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 0.8rem;
+  }
+
+  .step-title span { color: var(--acid); }
+
+  .step-desc {
+    font-size: 0.9rem;
+    color: var(--white-mid);
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+    font-weight: 300;
+    max-width: 500px;
+  }
+
+  /* INPUTS */
+  .field {
+    margin-bottom: 1.2rem;
+  }
+
+  .field-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--white-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .field-label span {
+    color: var(--acid);
+    margin-left: 0.3rem;
+  }
+
+  .field-input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 0.9rem 1.1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    letter-spacing: 0.04em;
+    resize: none;
+  }
+
+  .field-input::placeholder { color: var(--white-dim); }
+
+  .field-input:focus {
+    border-color: var(--acid-border);
+    box-shadow: 0 0 0 1px rgba(0,255,135,0.1);
+  }
+
+  textarea.field-input {
+    min-height: 100px;
+    line-height: 1.7;
+  }
+
+  /* TOGGLE CHIPS */
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .chip {
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--white-mid);
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .chip:hover {
+    border-color: var(--acid-border);
+    color: var(--white);
+  }
+
+  .chip.selected {
+    border-color: var(--acid);
+    color: var(--acid);
+    background: var(--acid-dim);
+    box-shadow: 0 0 12px rgba(0,255,135,0.1);
+  }
+
+  /* PROVIDER CARDS */
+  .provider-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+  }
+
+  .provider-card {
+    border: 1px solid var(--border);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .provider-card:hover {
+    border-color: var(--acid-border);
+    background: var(--acid-dim);
+  }
+
+  .provider-card.selected {
+    border-color: var(--acid);
+    background: var(--acid-dim);
+  }
+
+  .provider-card.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.6rem;
+    font-size: 0.6rem;
+    color: var(--acid);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .provider-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .provider-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+  }
+
+  .provider-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--white-dim);
+    margin-top: 0.3rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* PROMPT BUILDER */
+  .prompt-item {
+    border: 1px solid var(--border);
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    animation: stepIn 0.3s ease;
+  }
+
+  .prompt-content {
+    flex: 1;
+  }
+
+  .prompt-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--acid);
+    letter-spacing: 0.15em;
+    margin-bottom: 0.4rem;
+  }
+
+  .prompt-text {
+    font-size: 0.82rem;
+    color: var(--white-mid);
+    line-height: 1.6;
+  }
+
+  .prompt-delete {
+    background: none;
+    border: none;
+    color: var(--white-dim);
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    transition: color 0.2s;
+    padding: 0;
+    flex-shrink: 0;
+  }
+
+  .prompt-delete:hover { color: rgba(255,80,80,0.8); }
+
+  .add-prompt-btn {
+    width: 100%;
+    border: 1px dashed var(--white-dim);
+    background: none;
+    color: var(--white-dim);
+    padding: 0.8rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.4rem;
+  }
+
+  .add-prompt-btn:hover {
+    border-color: var(--acid-border);
+    color: var(--acid);
+  }
+
+  /* PROFILE PREVIEW (final step) */
+  .profile-preview {
+    background: var(--surface-2);
+    border: 1px solid var(--acid-border);
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,255,135,0.06);
+  }
+
+  .preview-bar {
+    padding: 0.7rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface-3);
+  }
+
+  .preview-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--acid);
+    letter-spacing: 0.1em;
+    margin-left: auto;
+  }
+
+  .preview-body {
+    padding: 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.9;
+    color: var(--white-mid);
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .preview-body::-webkit-scrollbar { width: 4px; }
+  .preview-body::-webkit-scrollbar-thumb { background: var(--acid-border); }
+
+  .json-key { color: var(--acid); }
+  .json-str { color: #a8d8b0; }
+  .json-arr { color: var(--white-mid); }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2.5rem;
+    gap: 1rem;
+  }
+
+  .btn-next {
+    background: var(--acid);
+    color: var(--void);
+    border: none;
+    padding: 0.85rem 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: box-shadow 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .btn-next:hover {
+    box-shadow: 0 0 24px rgba(0,255,135,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-back {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--white-dim);
+    padding: 0.85rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .btn-back:hover {
+    border-color: var(--white-dim);
+    color: var(--white);
+  }
+
+  .btn-export {
+    background: none;
+    border: 1px solid var(--acid-border);
+    color: var(--acid);
+    padding: 0.85rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-export:hover {
+    background: var(--acid-dim);
+    box-shadow: 0 0 16px rgba(0,255,135,0.15);
+  }
+
+  /* INIT SCREEN */
+  .init-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--void);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    animation: initFade 0.4s ease 1.8s forwards;
+  }
+
+  @keyframes initFade {
+    to { opacity: 0; pointer-events: none; }
+  }
+
+  .init-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 3rem;
+    letter-spacing: 0.2em;
+    color: var(--white);
+  }
+
+  .init-logo span { color: var(--acid); }
+
+  .init-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--acid);
+    letter-spacing: 0.2em;
+    overflow: hidden;
+    white-space: nowrap;
+    animation: typeIn 0.8s steps(30) 0.4s both;
+    width: 0;
+  }
+
+  @keyframes typeIn {
+    to { width: 100%; }
+  }
+
+  .init-bar {
+    width: 200px;
+    height: 2px;
+    background: var(--surface-2);
+    margin-top: 1rem;
+    overflow: hidden;
+  }
+
+  .init-progress {
+    height: 100%;
+    background: var(--acid);
+    box-shadow: 0 0 8px var(--acid);
+    animation: loadBar 1.5s ease 0.2s forwards;
+    width: 0%;
+  }
+
+  @keyframes loadBar {
+    to { width: 100%; }
+  }
+
+  /* STATUS */
+  .field-hint {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--white-dim);
+    margin-top: 0.4rem;
+    letter-spacing: 0.08em;
+  }
+
+  .field-hint::before { content: '// '; }
+
+  /* SUCCESS */
+  .success-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--acid-border);
+    padding: 0.4rem 0.9rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--acid);
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    background: var(--acid-dim);
+  }
+
+  .success-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--acid);
+    box-shadow: 0 0 6px var(--acid);
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @media (max-width: 600px) {
+    .provider-grid { grid-template-columns: 1fr 1fr; }
+    .btn-row { flex-direction: column-reverse; align-items: stretch; }
+    .btn-next, .btn-back, .btn-export { text-align: center; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INIT SCREEN -->
+<div class="init-screen" id="initScreen">
+  <div class="init-logo">MYN<span>D</span></div>
+  <div class="init-line">INITIALIZING PROFILE PROTOCOL...</div>
+  <div class="init-bar"><div class="init-progress"></div></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a href="mynd-landing-v2.html" class="nav-logo">MYN<span>D</span></a>
+  <div class="nav-center">
+    <div class="nav-step-indicator" id="pipContainer"></div>
+  </div>
+  <div class="nav-right" id="stepCounter">STEP 1 / 5</div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- STEP 1: INIT -->
+  <div class="step active" id="step-1">
+    <div class="step-tag">PROTOCOL_INIT // IDENTITY</div>
+    <h1 class="step-title">Who are<br>you, <span>builder</span>?</h1>
+    <p class="step-desc">This is the foundation of your MYND Profile. No algorithm will guess this. You define it.</p>
+
+    <div class="field">
+      <label class="field-label">FULL NAME <span>*</span></label>
+      <input type="text" class="field-input" id="f-name" placeholder="Dennis Müller" />
+    </div>
+    <div class="field">
+      <label class="field-label">MYND HANDLE <span>*</span></label>
+      <input type="text" class="field-input" id="f-handle" placeholder="@dennis" />
+      <p class="field-hint">your unique identity tag across providers</p>
+    </div>
+    <div class="field">
+      <label class="field-label">PRIMARY LANGUAGE</label>
+      <div class="chip-group" id="lang-chips">
+        <div class="chip selected" data-val="EN">EN</div>
+        <div class="chip" data-val="DE">DE</div>
+        <div class="chip" data-val="AL">AL</div>
+        <div class="chip" data-val="FR">FR</div>
+        <div class="chip" data-val="ES">ES</div>
+        <div class="chip" data-val="Multi">MULTI</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <div></div>
+      <button class="btn-next" onclick="nextStep()">INITIALIZE → </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: THINKING STYLE -->
+  <div class="step" id="step-2">
+    <div class="step-tag">PROTOCOL_02 // COGNITION</div>
+    <h1 class="step-title">How do you<br><span>think</span>?</h1>
+    <p class="step-desc">This shapes how every AI interaction begins. Select all that apply — be honest, not aspirational.</p>
+
+    <div class="field">
+      <label class="field-label">THINKING STYLE</label>
+      <div class="chip-group" id="think-chips">
+        <div class="chip selected" data-val="Systemic">SYSTEMIC</div>
+        <div class="chip" data-val="Analytical">ANALYTICAL</div>
+        <div class="chip" data-val="Narrative">NARRATIVE</div>
+        <div class="chip" data-val="Visual">VISUAL</div>
+        <div class="chip" data-val="First Principles">FIRST PRINCIPLES</div>
+        <div class="chip" data-val="Intuitive">INTUITIVE</div>
+        <div class="chip" data-val="Strategic">STRATEGIC</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:1.5rem;">
+      <label class="field-label">COMMUNICATION TONE</label>
+      <div class="chip-group" id="tone-chips">
+        <div class="chip selected" data-val="Direct">DIRECT</div>
+        <div class="chip" data-val="Formal">FORMAL</div>
+        <div class="chip" data-val="Casual">CASUAL</div>
+        <div class="chip" data-val="Provocative">PROVOCATIVE</div>
+        <div class="chip" data-val="Concise">CONCISE</div>
+        <div class="chip" data-val="Expansive">EXPANSIVE</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:1.5rem;">
+      <label class="field-label">OUTPUT FORMAT PREFERENCE</label>
+      <div class="chip-group" id="format-chips">
+        <div class="chip selected" data-val="Structured">STRUCTURED</div>
+        <div class="chip" data-val="Prose">PROSE</div>
+        <div class="chip" data-val="Lists">LISTS</div>
+        <div class="chip" data-val="Code-heavy">CODE-HEAVY</div>
+        <div class="chip" data-val="Mixed">MIXED</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="prevStep()">← BACK</button>
+      <button class="btn-next" onclick="nextStep()">NEXT → </button>
+    </div>
+  </div>
+
+  <!-- STEP 3: CONTEXT -->
+  <div class="step" id="step-3">
+    <div class="step-tag">PROTOCOL_03 // CONTEXT</div>
+    <h1 class="step-title">What do<br>you <span>build</span>?</h1>
+    <p class="step-desc">Give every AI you work with an unfair advantage. This context travels with you across all providers.</p>
+
+    <div class="field">
+      <label class="field-label">WHO YOU ARE <span>*</span></label>
+      <textarea class="field-input" id="f-who" placeholder="Founder, operator, builder. I run a digital holding company structured around 8 pillars..."></textarea>
+      <p class="field-hint">3–5 sentences. Be specific, not generic.</p>
+    </div>
+
+    <div class="field">
+      <label class="field-label">WHAT YOU'RE BUILDING</label>
+      <textarea class="field-input" id="f-what" placeholder="Current projects, companies, products — what's on your plate right now..."></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">YOUR OPERATING PRINCIPLES</label>
+      <textarea class="field-input" id="f-principles" placeholder="Values, non-negotiables, how you make decisions..." style="min-height:80px;"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="prevStep()">← BACK</button>
+      <button class="btn-next" onclick="nextStep()">NEXT → </button>
+    </div>
+  </div>
+
+  <!-- STEP 4: SYSTEM PROMPTS -->
+  <div class="step" id="step-4">
+    <div class="step-tag">PROTOCOL_04 // PROMPTS</div>
+    <h1 class="step-title">Your<br><span>system</span> logic.</h1>
+    <p class="step-desc">Add the system prompts you use most. These become portable across every provider you connect.</p>
+
+    <div id="prompt-list"></div>
+
+    <div id="prompt-add-ui" style="display:none; margin-top:0.8rem;">
+      <div class="field">
+        <label class="field-label">PROMPT NAME</label>
+        <input type="text" class="field-input" id="new-prompt-name" placeholder="e.g. CONTENT_STRATEGIST" />
+      </div>
+      <div class="field">
+        <label class="field-label">PROMPT CONTENT</label>
+        <textarea class="field-input" id="new-prompt-content" placeholder="You are a senior content strategist..." style="min-height:100px;"></textarea>
+      </div>
+      <div style="display:flex; gap:0.6rem; margin-top:0.8rem;">
+        <button class="btn-next" style="font-size:0.6rem; padding:0.7rem 1.2rem;" onclick="savePrompt()">SAVE PROMPT</button>
+        <button class="btn-back" style="font-size:0.6rem;" onclick="cancelPrompt()">CANCEL</button>
+      </div>
+    </div>
+
+    <button class="add-prompt-btn" id="addPromptBtn" onclick="showPromptAdd()">+ ADD SYSTEM PROMPT</button>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="prevStep()">← BACK</button>
+      <button class="btn-next" onclick="nextStep()">NEXT → </button>
+    </div>
+  </div>
+
+  <!-- STEP 5: PROVIDERS -->
+  <div class="step" id="step-5">
+    <div class="step-tag">PROTOCOL_05 // CONNECTIONS</div>
+    <h1 class="step-title">Connect your<br><span>providers</span>.</h1>
+    <p class="step-desc">Select the AI providers you currently use. MYND will inject your profile as context across all of them.</p>
+
+    <div class="provider-grid" id="provider-grid">
+      <div class="provider-card selected" data-val="Claude" onclick="toggleProvider(this)">
+        <span class="provider-icon">◆</span>
+        <div class="provider-name">CLAUDE</div>
+        <div class="provider-tag">Anthropic · MCP ready</div>
+      </div>
+      <div class="provider-card" data-val="ChatGPT" onclick="toggleProvider(this)">
+        <span class="provider-icon">◎</span>
+        <div class="provider-name">ChatGPT</div>
+        <div class="provider-tag">OpenAI · GPT-4o</div>
+      </div>
+      <div class="provider-card" data-val="Gemini" onclick="toggleProvider(this)">
+        <span class="provider-icon">✦</span>
+        <div class="provider-name">GEMINI</div>
+        <div class="provider-tag">Google · Ultra</div>
+      </div>
+      <div class="provider-card" data-val="Mistral" onclick="toggleProvider(this)">
+        <span class="provider-icon">⬡</span>
+        <div class="provider-name">MISTRAL</div>
+        <div class="provider-tag">Open source</div>
+      </div>
+      <div class="provider-card" data-val="Grok" onclick="toggleProvider(this)">
+        <span class="provider-icon">✕</span>
+        <div class="provider-name">GROK</div>
+        <div class="provider-tag">xAI · Real-time</div>
+      </div>
+      <div class="provider-card" data-val="Custom" onclick="toggleProvider(this)">
+        <span class="provider-icon">+</span>
+        <div class="provider-name">CUSTOM</div>
+        <div class="provider-tag">API / Self-hosted</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="prevStep()">← BACK</button>
+      <button class="btn-next" onclick="buildProfile()">GENERATE PROFILE → </button>
+    </div>
+  </div>
+
+  <!-- STEP 6: COMPLETE -->
+  <div class="step" id="step-6">
+    <div class="success-badge">
+      <div class="success-dot"></div>
+      PROFILE INITIALIZED
+    </div>
+    <div class="step-tag">PROTOCOL_COMPLETE // YOUR MYND IS LIVE</div>
+    <h1 class="step-title">Your identity.<br><span>Secured.</span></h1>
+    <p class="step-desc">This is your MYND Profile — a portable, encrypted snapshot of your AI identity. Export it, version it, own it.</p>
+
+    <div class="profile-preview">
+      <div class="preview-bar">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--white-dim);opacity:0.3;"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--white-dim);opacity:0.3;"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--white-dim);opacity:0.3;"></div>
+        <div class="preview-title">mynd_profile.json</div>
+      </div>
+      <div class="preview-body" id="profile-json"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-export" onclick="exportProfile()">↓ EXPORT JSON</button>
+      <button class="btn-next" onclick="window.location.href='mynd-landing-v2.html'">BACK TO MYND ↗</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const TOTAL_STEPS = 5;
+  let currentStep = 1;
+  const profileData = {
+    version: "0.1.0",
+    protocol: "MYND",
+    created: new Date().toISOString(),
+    identity: {},
+    cognition: { thinking: [], tone: [], format: [] },
+    context: {},
+    prompts: [],
+    connections: []
+  };
+
+  // Build pips
+  const pipContainer = document.getElementById('pipContainer');
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'step-pip' + (i === 0 ? ' active' : '');
+    pip.id = 'pip-' + i;
+    pipContainer.appendChild(pip);
+  }
+
+  function updateNav() {
+    for (let i = 0; i < TOTAL_STEPS; i++) {
+      const pip = document.getElementById('pip-' + i);
+      pip.className = 'step-pip';
+      if (i < currentStep - 1) pip.classList.add('done');
+      else if (i === currentStep - 1) pip.classList.add('active');
+    }
+    const displayStep = Math.min(currentStep, TOTAL_STEPS);
+    document.getElementById('stepCounter').textContent = `STEP ${displayStep} / ${TOTAL_STEPS}`;
+  }
+
+  function showStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('step-' + n);
+    if (target) {
+      target.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    updateNav();
+  }
+
+  function nextStep() {
+    if (currentStep === 1) {
+      const name = document.getElementById('f-name').value.trim();
+      const handle = document.getElementById('f-handle').value.trim();
+      if (!name) { highlight('f-name'); return; }
+      profileData.identity.name = name;
+      profileData.identity.handle = handle || '@' + name.split(' ')[0].toLowerCase();
+      profileData.identity.language = getSelected('lang-chips');
+    }
+    if (currentStep === 2) {
+      profileData.cognition.thinking = getSelected('think-chips', true);
+      profileData.cognition.tone = getSelected('tone-chips', true);
+      profileData.cognition.format = getSelected('format-chips', true);
+    }
+    if (currentStep === 3) {
+      profileData.context.who = document.getElementById('f-who').value.trim();
+      profileData.context.what = document.getElementById('f-what').value.trim();
+      profileData.context.principles = document.getElementById('f-principles').value.trim();
+    }
+    currentStep++;
+    showStep(currentStep);
+  }
+
+  function prevStep() {
+    if (currentStep > 1) { currentStep--; showStep(currentStep); }
+  }
+
+  function getSelected(groupId, multi = false) {
+    const chips = document.querySelectorAll(`#${groupId} .chip.selected`);
+    const vals = Array.from(chips).map(c => c.dataset.val);
+    return multi ? vals : (vals[0] || '');
+  }
+
+  function highlight(id) {
+    const el = document.getElementById(id);
+    el.style.borderColor = 'rgba(255,80,80,0.6)';
+    el.focus();
+    setTimeout(() => el.style.borderColor = '', 2000);
+  }
+
+  // Chip toggles
+  document.querySelectorAll('.chip-group').forEach(group => {
+    const isMulti = ['think-chips','tone-chips','format-chips'].includes(group.id);
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        if (!isMulti) {
+          group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+        } else {
+          chip.classList.toggle('selected');
+        }
+      });
+    });
+  });
+
+  // Provider toggle
+  function toggleProvider(card) {
+    card.classList.toggle('selected');
+  }
+
+  // Prompts
+  const prompts = [];
+
+  function showPromptAdd() {
+    document.getElementById('prompt-add-ui').style.display = 'block';
+    document.getElementById('addPromptBtn').style.display = 'none';
+  }
+
+  function cancelPrompt() {
+    document.getElementById('prompt-add-ui').style.display = 'none';
+    document.getElementById('addPromptBtn').style.display = 'block';
+    document.getElementById('new-prompt-name').value = '';
+    document.getElementById('new-prompt-content').value = '';
+  }
+
+  function savePrompt() {
+    const name = document.getElementById('new-prompt-name').value.trim();
+    const content = document.getElementById('new-prompt-content').value.trim();
+    if (!name || !content) return;
+    const id = Date.now();
+    prompts.push({ id, name, content });
+    renderPrompts();
+    cancelPrompt();
+  }
+
+  function deletePrompt(id) {
+    const idx = prompts.findIndex(p => p.id === id);
+    if (idx > -1) prompts.splice(idx, 1);
+    renderPrompts();
+  }
+
+  function renderPrompts() {
+    const list = document.getElementById('prompt-list');
+    list.innerHTML = '';
+    prompts.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'prompt-item';
+      el.innerHTML = `
+        <div class="prompt-content">
+          <div class="prompt-label">${p.name.toUpperCase()}</div>
+          <div class="prompt-text">${p.content.substring(0, 120)}${p.content.length > 120 ? '...' : ''}</div>
+        </div>
+        <button class="prompt-delete" onclick="deletePrompt(${p.id})">✕ REMOVE</button>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  // Build profile + go to final step
+  function buildProfile() {
+    profileData.prompts = prompts.map(p => ({ name: p.name, content: p.content }));
+    profileData.connections = Array.from(
+      document.querySelectorAll('#provider-grid .provider-card.selected')
+    ).map(c => c.dataset.val);
+
+    currentStep = 6;
+    showStep(6);
+    renderProfileJSON();
+  }
+
+  function renderProfileJSON() {
+    const json = JSON.stringify(profileData, null, 2);
+    const highlighted = json
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\[|\])/g, ': <span class="json-arr">$1</span>');
+    document.getElementById('profile-json').innerHTML = highlighted;
+  }
+
+  function exportProfile() {
+    const blob = new Blob([JSON.stringify(profileData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mynd_profile_${profileData.identity.handle || 'export'}.json`.replace('@','');
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
